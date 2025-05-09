@@ -57,7 +57,7 @@ async function sendEmail(endpoits: EndpointStatus[]) {
 	
 
 
-const {data} = import.meta.env.RESEND_API_KEY ? await sendEmail(endpoitsTest) :  "No resend api key"
+const data = import.meta.env.RESEND_API_KEY ? await sendEmail(endpoitsTest) :  "No resend api key"
 
 ---
 <Layout>
