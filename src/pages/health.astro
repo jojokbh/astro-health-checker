@@ -1,0 +1,81 @@
+---
+import Layout from '../layouts/Layout.astro';
+
+interface Endpoint {
+  name: string;
+  url: string;
+}
+
+interface EndpointStatus extends Endpoint {
+  status: string;
+  statusCode?: number;
+}
+
+const endpoints: Endpoint[] = [
+  { name: "Google", url: "https://www.google.com" },
+  { name: "Cloudflare", url: "https://www.cloudflare.com" },
+  { name: "Example API (Healthy)", url: "https://jsonplaceholder.typicode.com/todos/1" },
+  { name: "Example API (Not Found)", url: "https://jsonplaceholder.typicode.com/nonexistent" },
+  { name: "Invalid URL", url: "invalid-url-should-fail" },
+];
+
+const endpointStatuses: EndpointStatus[] = await Promise.all(
+  endpoints.map(async (endpoint) => {
+    try {
+      const response = await fetch(endpoint.url, { method: 'HEAD' }); // HEAD request to be lighter
+      return {
+        ...endpoint,
+        status: response.ok ? 'Healthy' : 'Unhealthy',
+        statusCode: response.status,
+      };
+    } catch (error: any) {
+      // console.error(`Error fetching ${endpoint.url}:`, error.message);
+      return {
+        ...endpoint,
+        status: 'Error',
+        statusCode: undefined, // Or some other indicator like 0 or -1
+      };
+    }
+  })
+);
+---
+
+<Layout title="Endpoint Health Check">
+  <main class="container mx-auto p-4">
+    <h1 class="text-3xl font-bold mb-6 text-center">Endpoint Health Status</h1>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {endpointStatuses.map((endpoint) => (
+        <div class={`p-6 rounded-lg shadow-lg ${
+            endpoint.status === 'Healthy' ? 'bg-green-100 border-green-500' :
+            endpoint.status === 'Unhealthy' ? 'bg-yellow-100 border-yellow-500' :
+            'bg-red-100 border-red-500'
+          } border-l-4`}>
+          <h2 class="text-xl font-semibold mb-2">{endpoint.name}</h2>
+          <p class="text-sm text-gray-600 break-all mb-1">URL: <a href={endpoint.url} target="_blank" rel="noopener noreferrer" class="text-blue-500 hover:underline">{endpoint.url}</a></p>
+          <p class="text-lg font-medium">
+            Status: <span class={
+              endpoint.status === 'Healthy' ? 'text-green-700' :
+              endpoint.status === 'Unhealthy' ? 'text-yellow-700' :
+              'text-red-700'
+            }>{endpoint.status}</span>
+            {endpoint.statusCode && ` (Code: ${endpoint.statusCode})`}
+          </p>
+        </div>
+      ))}
+    </div>
+    <p class="mt-8 text-sm text-gray-500 text-center">
+      Health checks are performed server-side when the page is built/rendered.
+    </p>
+  </main>
+</Layout>
+
+<style>
+  /* Basic styling for the page, assuming TailwindCSS is not fully set up or for overrides */
+  body {
+    font-family: sans-serif;
+  }
+  .container {
+    max-width: 1200px;
+  }
+  /* More specific styles can be added if needed */
+</style>
