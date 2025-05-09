@@ -1,26 +1,51 @@
 ---
+import { getCollection } from 'astro:content';
 
-interface Endpoint {
+const endpointCollectionEntries = await getCollection('endpoints');
+
+
+// This interface defines the structure of an endpoint as read from the content collection.
+interface EndpointEntryData {
   name: string;
   url: string;
+  method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' | 'HEAD' | 'OPTIONS';
+  expectedStatus: number;
+  description?: string;
+  headers?: Record<string, string>;
+  body?: any;
 }
 
-interface EndpointStatus extends Endpoint {
-  status: string;
-  statusCode?: number;
+// This interface will represent the state of each endpoint after checking.
+// It includes fields from your content collection and dynamic status info.
+interface EndpointStatus {
+  // Fields from content collection (endpoints.json)
+  name: string;
+  url: string;
+  method: string; // From schema, e.g., 'GET', 'POST'
+  expectedStatus: number; // From schema
+  description?: string; // Optional from schema
+  headers?: Record<string, string>; // Optional from schema
+  body?: any; // Optional from schema
+
+  // Dynamically added fields
+  status: 'Healthy' | 'Unhealthy' | 'Error' | 'Pending'; // Status of the check
+  statusCode?: number; // Actual HTTP status code received
+  statusText?: string; // Actual HTTP status text received
+  errorMessage?: string; // Error message if the check failed
 }
 
-const endpoints: Endpoint[] = [
-  { name: "Google", url: "https://www.google.com" },
-  { name: "Cloudflare", url: "https://www.cloudflare.com" },
-  { name: "Example API (Healthy)", url: "https://jsonplaceholder.typicode.com/todos/1" },
-  { name: "Example API (Not Found)", url: "https://jsonplaceholder.typicode.com/nonexistent" },
-  { name: "Invalid URL", url: "invalid-url-should-fail" },
-];
+// CacheData will now use the new EndpointStatus.
+// The existing CacheData interface definition is fine as it refers to EndpointStatus.
+// interface CacheData {
+//   statuses: EndpointStatus[];
+//   lastChecked: number; // Timestamp
+// }
+// No need to redefine CacheData if its structure (referencing EndpointStatus) remains the same.
+// The original CacheData definition will now use the new EndpointStatus above.
 
 // Simple in-memory cache
 interface CacheData {
-  statuses: EndpointStatus[];
+  statuses: EndpointStatus[]; // This will now use the EndpointStatus defined above
   lastChecked: number; // Timestamp
 }
 
@@ -55,36 +80,74 @@ async function getEndpointStatuses(): Promise<CacheData> {
     // console.log("Returning cached data");
     return currentCache;
   }
-
-  // console.log("Fetching new data");
+  
   const statuses: EndpointStatus[] = await Promise.all(
-    endpoints.map(async (endpoint) => {
+    endpointCollectionEntries.map(async (entry) => {
+      const endpoint = entry.data as EndpointEntryData;
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 seconds timeout
 
+      const fetchOptions: RequestInit = {
+        method: endpoint.method || 'GET',
+        signal: controller.signal,
+        // Initialize headers as a Record<string, string> to ensure it's an object
+        headers: endpoint.headers ? { ...endpoint.headers } : {}, 
+      };
+
+      if (endpoint.body && (endpoint.method === 'POST' || endpoint.method === 'PUT' || endpoint.method === 'PATCH')) {
+        fetchOptions.body = JSON.stringify(endpoint.body);
+        // Explicitly cast headers to Record<string, string> for setting Content-Type,
+        // as we've initialized it as such.
+        const headers = fetchOptions.headers as Record<string, string>;
+        if (!headers['Content-Type']) {
+          headers['Content-Type'] = 'application/json';
+        }
+        // fetchOptions.headers = headers; // Not strictly necessary as headers is a reference
+      }
+
       try {
-        const response = await fetch(endpoint.url, { 
-          method: 'HEAD', 
-          signal: controller.signal 
-        });
-        console.log("fetching ", endpoint.url);
+        const response = await fetch(endpoint.url, fetchOptions);
         clearTimeout(timeoutId); // Clear timeout if fetch completes
+        
+        const isSuccess = response.status === endpoint.expectedStatus;
+
         return {
-          ...endpoint,
-          status: response.ok ? 'Healthy' : 'Unhealthy',
+          name: endpoint.name,
+          url: endpoint.url,
+          method: endpoint.method,
+          expectedStatus: endpoint.expectedStatus,
+          description: endpoint.description,
+          headers: endpoint.headers,
+          body: endpoint.body,
+          status: isSuccess ? 'Healthy' : 'Unhealthy',
           statusCode: response.status,
+          statusText: response.statusText,
+          errorMessage: isSuccess ? undefined : `Expected status ${endpoint.expectedStatus} but got ${response.status}`,
         };
       } catch (error: any) {
+        clearTimeout(timeoutId);
+        let errorMessage = error.message;
+        if (error.name === 'AbortError' || error.message.toLowerCase().includes('timed out') || error.message.toLowerCase().includes('aborted')) {
+            errorMessage = 'Request timed out or was aborted.';
+        }
         return {
-          ...endpoint,
+          name: endpoint.name,
+          url: endpoint.url,
+          method: endpoint.method,
+          expectedStatus: endpoint.expectedStatus,
+          description: endpoint.description,
+          headers: endpoint.headers,
+          body: endpoint.body,
           status: 'Error',
-          statusCode: undefined,
+          statusCode: undefined, // No status code if fetch itself failed
+          statusText: undefined,
+          errorMessage: errorMessage,
         };
       }
     })
   );
 
-  const newCacheData = { statuses, lastChecked: now };
+  const newCacheData: CacheData = { statuses, lastChecked: now };
   setGlobalCache(newCacheData);
   return newCacheData;
 }

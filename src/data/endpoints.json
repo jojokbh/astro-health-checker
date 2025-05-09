@@ -1,0 +1,90 @@
+[
+  {
+    "id":"google",
+    "name": "Google Homepage",
+    "url": "https://www.google.com",
+    "method": "GET",
+    "expectedStatus": 200,
+    "description": "Checks if Google homepage is accessible."
+  },
+  {
+    "id":"jsft_url",
+    "name": "JSFT URL shortener",
+    "url": "https://www.jsft.dk",
+    "method": "GET",
+    "expectedStatus": 200,
+    "description": "Checks if JSFT URL shortener is accessible."
+  },
+  {
+    "id":"jsft_api",
+    "name": "JSFT api",
+    "url": "https://api.jsft.dk/api/health",
+    "method": "GET",
+    "expectedStatus": 200,
+    "description": "Checks if JSFT api is accessible."
+  },
+  {
+    "id":"jsft_kv",
+    "name": "JSFT Key-Value",
+    "url": "https://jsft.dk/",
+    "method": "GET",
+    "expectedStatus": 200,
+    "description": "Checks if JSFT key value server is accessible."
+  },
+  {
+    "id":"jonessoftwaresolutions",
+    "name": "Jones Software Solutions",
+    "url": "https://jonessoftwaresolutions.com",
+    "method": "GET",
+    "expectedStatus": 200,
+    "description": "Checks if JonesSoftwareSolutions is accessible."
+  },
+  {
+    "id":"appeera",
+    "name": "Appeera",
+    "url": "https://appeera.com",
+    "method": "GET",
+    "expectedStatus": 200,
+    "description": "Checks if appeera is accessible."
+  },
+  {
+    "id":"ikhlas_api",
+    "name": "Ikhlas API",
+    "url": "https://api.ikhlas.dk/api/health",
+    "method": "GET",
+    "expectedStatus": 200,
+    "description": "Checks if ikhlas is accessible."
+  },
+  {
+    "id":"yaaumma_api",
+    "name": "Yaaumma API",
+    "url": "https://api.yaaumma.com/api/health",
+    "method": "GET",
+    "expectedStatus": 200,
+    "description": "Checks if Yaaumma API is accessible."
+  },
+  {
+    "id":"argo",
+    "name": "Argo cd",
+    "url": "https://argocd.jonessoftwaresolutions.com",
+    "method": "GET",
+    "expectedStatus": 200,
+    "description": "Checks if Argo cd is accessible."
+  },
+  {
+    "id":"hairtalk",
+    "name": "Hairtalk api",
+    "url": "https://hairtalk.jonessoftwaresolutions.com/",
+    "method": "GET",
+    "expectedStatus": 404,
+    "description": "Checks if hairtalk api is running."
+  },
+  {
+    "id":"spanish",
+    "name": "Spanish api",
+    "url": "https://spanish.jsft.dk/api/health",
+    "method": "GET",
+    "expectedStatus": 200,
+    "description": "Checks if Spanish api is running."
+  }
+]
