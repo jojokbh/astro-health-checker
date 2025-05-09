@@ -51,7 +51,7 @@ async function sendEmail(endpoits: EndpointStatus[]) {
 	
 
 
-const {data} = await sendEmail(endpoitsTest);
+const {data} = import.meta.env.RESEND_API_KEY ? await sendEmail(endpoitsTest) :  "No resend api key"
 
 ---
 <Layout>
@@ -66,7 +66,7 @@ const {data} = await sendEmail(endpoitsTest);
   </header>
 
   <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-	<span>{JSON.stringify(data)}</span>
+	<span>{data}</span>
   </div>
 
   <footer class="mt-12 pt-8 border-t border-slate-700 text-center">
