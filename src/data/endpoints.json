@@ -1,11 +1,11 @@
 [
   {
-    "id":"google",
-    "name": "Google Homepage",
-    "url": "https://www.google.com",
+    "id":"cloudflare",
+    "name": "Cloudflare Homepage",
+    "url": "https://www.cloudflare.com",
     "method": "GET",
     "expectedStatus": 200,
-    "description": "Checks if Google homepage is accessible."
+    "description": "Checks if cloudflare is accessible."
   },
   {
     "id":"jsft_url",
