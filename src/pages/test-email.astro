@@ -21,7 +21,7 @@ async function sendEmail(endpoits: EndpointStatus[]) {
     const response = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
-        'Authorization': 'Bearer '+import.meta.env.RESEND_API_KEY,
+        'Authorization': 'Bearer '+import.meta.env.PUBLIC_RESEND_API_KEY,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
@@ -57,7 +57,7 @@ async function sendEmail(endpoits: EndpointStatus[]) {
 	
 
 
-const data = import.meta.env.RESEND_API_KEY ? await sendEmail(endpoitsTest) :  "No resend api key"
+const data = import.meta.env.PUBLIC_RESEND_API_KEY ? await sendEmail(endpoitsTest) :  "No resend api key"
 
 ---
 <Layout>
