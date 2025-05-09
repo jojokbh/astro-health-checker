@@ -19,30 +19,65 @@ const endpoints: Endpoint[] = [
   { name: "Invalid URL", url: "invalid-url-should-fail" },
 ];
 
-const endpointStatuses: EndpointStatus[] = await Promise.all(
-  endpoints.map(async (endpoint) => {
-    try {
-      const response = await fetch(endpoint.url, { method: 'HEAD' }); // HEAD request to be lighter
-      return {
-        ...endpoint,
-        status: response.ok ? 'Healthy' : 'Unhealthy',
-        statusCode: response.status,
-      };
-    } catch (error: any) {
-      // console.error(`Error fetching ${endpoint.url}:`, error.message);
-      return {
-        ...endpoint,
-        status: 'Error',
-        statusCode: undefined, // Or some other indicator like 0 or -1
-      };
-    }
-  })
-);
+// Simple in-memory cache
+interface CacheData {
+  statuses: EndpointStatus[];
+  lastChecked: number; // Timestamp
+}
+
+let cache: CacheData | null = null;
+const CACHE_DURATION_MS = 60 * 1000; // 1 minute
+
+async function getEndpointStatuses(): Promise<CacheData> {
+  const now = Date.now();
+
+  if (cache && (now - cache.lastChecked < CACHE_DURATION_MS)) {
+    // console.log("Returning cached data");
+    return cache;
+  }
+
+  // console.log("Fetching new data");
+  const statuses: EndpointStatus[] = await Promise.all(
+    endpoints.map(async (endpoint) => {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 seconds timeout
+
+      try {
+        const response = await fetch(endpoint.url, { 
+          method: 'HEAD', 
+          signal: controller.signal 
+        });
+        console.log("fetching ", endpoint.url);
+        clearTimeout(timeoutId); // Clear timeout if fetch completes
+        return {
+          ...endpoint,
+          status: response.ok ? 'Healthy' : 'Unhealthy',
+          statusCode: response.status,
+        };
+      } catch (error: any) {
+        return {
+          ...endpoint,
+          status: 'Error',
+          statusCode: undefined,
+        };
+      }
+    })
+  );
+
+  cache = { statuses, lastChecked: now };
+  return cache;
+}
+
+const { statuses: endpointStatuses, lastChecked } = await getEndpointStatuses();
+const lastCheckedDate = new Date(lastChecked);
 ---
 
 <Layout title="Endpoint Health Check">
   <main class="container mx-auto p-4">
     <h1 class="text-3xl font-bold mb-6 text-center">Endpoint Health Status</h1>
+    <p class="text-center text-gray-600 mb-6">
+      Last checked: <span id="lastCheckedTime">{lastCheckedDate.toLocaleString()}</span>
+    </p>
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       {endpointStatuses.map((endpoint) => (
         <div class={`p-6 rounded-lg shadow-lg ${
@@ -64,7 +99,7 @@ const endpointStatuses: EndpointStatus[] = await Promise.all(
       ))}
     </div>
     <p class="mt-8 text-sm text-gray-500 text-center">
-      Health checks are performed server-side when the page is built/rendered.
+      Health checks are performed server-side and cached for 1 minute.
     </p>
   </main>
 </Layout>
