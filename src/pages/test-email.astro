@@ -31,11 +31,17 @@ async function sendEmail(endpoits: EndpointStatus[]) {
         "html": "<strong>" + content + "</strong>"
       })
     });
+    if(response.ok) {
+      return "Email sent successfully!"
+    }else{
+      return "Failed to send email:"
+    }
     const data = await response.json();
 	return data;
   } catch (error) {
     return error;
   }
+  return "Didnt even try"
 }
 
 
