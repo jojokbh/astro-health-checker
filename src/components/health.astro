@@ -70,6 +70,32 @@ const CACHE_DURATION_MS = 60 * 1000; // 1 minute
 
 Astro.response.headers.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=30'); // Corrected Cache-Control
 
+async function sendEmail(endpoits: EndpointStatus[]) {
+  let content = "<ul>";
+  endpoits.forEach(endpoint => {
+    content += "<li>" + endpoint.name + ": " + endpoint.status + "</li>";
+  });
+  content += "</ul>";
+  try {
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer '+import.meta.env.RESEND_API_KEY,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        "from": "health@jsft.dk",
+        "to": "jojokbh@gmail.com",
+        "subject": "Health check failed",
+        "html": "<strong>" + content + "</strong>"
+      })
+    });
+    const data = await response.json();
+  } catch (error) {
+    console.error('Error:', error);
+  }
+}
+
 
 async function getEndpointStatuses(): Promise<CacheData> {
   let currentCache = getGlobalCache();
@@ -80,7 +106,9 @@ async function getEndpointStatuses(): Promise<CacheData> {
     // console.log("Returning cached data");
     return currentCache;
   }
-  
+
+  const failedEndpoints: EndpointStatus[] = [];
+
   const statuses: EndpointStatus[] = await Promise.all(
     endpointCollectionEntries.map(async (entry) => {
       const endpoint = entry.data as EndpointEntryData;
@@ -110,6 +138,21 @@ async function getEndpointStatuses(): Promise<CacheData> {
         clearTimeout(timeoutId); // Clear timeout if fetch completes
         
         const isSuccess = response.status === endpoint.expectedStatus;
+        if (!isSuccess) {
+          failedEndpoints.push({
+            name: endpoint.name,
+            url: endpoint.url,
+            method: endpoint.method,
+            expectedStatus: endpoint.expectedStatus,
+            description: endpoint.description,
+            headers: endpoint.headers,
+            body: endpoint.body,
+            status: 'Unhealthy',
+            statusCode: response.status,
+            statusText: response.statusText,
+            errorMessage: `Expected status ${endpoint.expectedStatus} but got ${response.status}`,
+          });
+        }
 
         return {
           name: endpoint.name,
@@ -146,6 +189,10 @@ async function getEndpointStatuses(): Promise<CacheData> {
       }
     })
   );
+
+  if(failedEndpoints.length > 0) {
+    sendEmail(failedEndpoints);
+  }
 
   const newCacheData: CacheData = { statuses, lastChecked: now };
   setGlobalCache(newCacheData);
