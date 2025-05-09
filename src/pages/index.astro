@@ -1,80 +1,11 @@
 ---
+import Health from '../components/health.astro';
+import Layout from '../layouts/Layout.astro';
 
-// This interface will represent the state of each endpoint after checking.
-// It includes fields from your content collection and dynamic status info.
-interface EndpointStatus {
-  // Fields from content collection (endpoints.json)
-  name: string;
-  url: string;
-  status: string;
-}
-
-async function sendEmail(endpoits: EndpointStatus[]) {
-  let content = "<ul>";
-  endpoits.forEach(endpoint => {
-    content += "<li>" + endpoint.name + ": " + endpoint.status + "</li>";
-  });
-  content += "</ul>";
-  try {
-    const response = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        'Authorization': 'Bearer '+import.meta.env.RESEND_API_KEY,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        "from": "health@jsft.dk",
-        "to": "jojokbh@gmail.com",
-        "subject": "Health check failed",
-        "html": "<strong>" + content + "</strong>"
-      })
-    });
-    const data = await response.json();
-	return data;
-  } catch (error) {
-    console.error('Error:', error);
-  }
-}
-
-
-async function TestEmail (){
-	const endpoitsTest:EndpointStatus[] = [
-		{
-
-			"name": "Test1",
-			"url": "https://fakeurl.com",
-			"status": "200"
-		}
-	]
-
-	const data = await sendEmail(endpoitsTest);
-	return data;
-}
-
-const {data} = await TestEmail();
-
+// Welcome to Astro! Wondering what to do next? Check out the Astro documentation at https://docs.astro.build
+// Don't want to use any of this? Delete everything in this file, the `assets`, `components`, and `layouts` directories, and start fresh.
 ---
 
-<main class="container mx-auto p-6 md:p-8">
-  <header class="mb-10 text-center">
-    <h1 class="text-4xl md:text-5xl font-bold tracking-tight text-slate-50 mb-3">
-      Endpoint Health Status
-    </h1>
-    <p class="text-slate-400 text-lg">
-      Live status of our critical services.
-    </p>
-  </header>
-
-  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-	<span>{JSON.stringify(data)}</span>
-  </div>
-
-  <footer class="mt-12 pt-8 border-t border-slate-700 text-center">
-    <p class="text-sm text-slate-500">
-      Health checks are performed server-side and cached for 1 minute.
-      Powered by <a href="https://astro.build" target="_blank" rel="noopener noreferrer" class="text-sky-400 hover:text-sky-300">Astro</a>
-      & <a href="https://tailwindcss.com" target="_blank" rel="noopener noreferrer" class="text-sky-400 hover:text-sky-300">Tailwind CSS</a>.
-      source code available on <a href="https://github.com/jojokbh/astro-health-checker" target="_blank" rel="noopener noreferrer" class="text-sky-400 hover:text-sky-300">GitHub</a>.
-    </p>
-  </footer>
-</main>
+<Layout>
+	<Health />
+</Layout>
