@@ -1,5 +1,4 @@
 ---
-import Layout from '../layouts/Layout.astro';
 
 interface Endpoint {
   name: string;
@@ -72,7 +71,6 @@ const { statuses: endpointStatuses, lastChecked } = await getEndpointStatuses();
 const lastCheckedDate = new Date(lastChecked);
 ---
 
-<Layout title="Endpoint Health Check">
   <main class="container mx-auto p-4">
     <h1 class="text-3xl font-bold mb-6 text-center">Endpoint Health Status</h1>
     <p class="text-center text-gray-600 mb-6">
@@ -102,8 +100,6 @@ const lastCheckedDate = new Date(lastChecked);
       Health checks are performed server-side and cached for 1 minute.
     </p>
   </main>
-</Layout>
-
 <style>
   /* Basic styling for the page, assuming TailwindCSS is not fully set up or for overrides */
   body {
